@@ -1,0 +1,239 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+	<meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width," initial-scale="1">
+	<title>数据分列</title>
+	<style>
+    div {
+      width: 100%;
+    }
+		.btn_ok {
+			width: 100px;
+			height: 32px;
+			display: flex;
+			margin-top: 10px;
+      display: block;
+      margin-left: auto;
+      margin-right: auto;
+      margin-bottom: 8px;
+      box-shadow: 0 2px 0 rgba(5, 145, 255, 0.1);
+      font-size: 14px;
+      padding: 4px 15px;
+      border-radius: 6px;
+      border: 1px solid transparent;
+		}
+
+    .tables_names, .fields_names {
+      width: 320px;
+      height: 30px;
+      margin-left: auto;
+      margin-bottom: 8px;
+      border: 1px solid #d9d9d9;
+      transition: all 0.2s cubic-bezier(0.645, 0.045, 0.355, 1);
+      border-radius: 6px
+    }
+    
+    .text_separator {
+      width: 320px;
+      height: 30px;
+      display: block;
+      margin-left: auto;
+      margin-right: auto;
+      margin-bottom: 8px;
+      border: 1px solid #d9d9d9;
+      transition: all 0.2s cubic-bezier(0.645, 0.045, 0.355, 1);
+      border-radius: 6px
+    }
+    span {
+      width: 260px;
+      height: 25px;
+      display: block;
+      margin-left: auto;
+      margin-right: auto;
+      text-align: center;
+      font-size: 14px;
+    }
+    .init_names, .btn_div, btn_init_div {
+      display: block;
+      width: 320px;
+      margin-left: auto;
+      margin-right: auto;
+    }
+    .loading {
+      position: fixed;
+      left: 0px;
+      top: 0px;
+      right: 0px;
+      bottom: 0px;
+      background-color: rgba(100,100,100,0.6);
+      text-align: center;
+      color: #fff;
+      font-size: 18px;
+      font-weight: bolder;
+    }
+    .loading-text {
+      position: absolute;
+      top: 50%;
+      transform: translateY(-50%);
+    }
+    .setup{
+      width: 50px;
+      height: 25px;
+      position: absolute;
+      margin-left: calc(100% - 60px);
+      text-align: center;
+      font-size: 14px;
+      cursor: pointer;
+    }
+	</style>
+	<script src="https://cdn.bootcss.com/jquery/3.4.1/jquery.min.js"></script>
+</head>
+<script>
+	$(function(){
+    const opt = document.createElement('option');
+    opt.value = "none";
+    opt.text = "----点击加载数据表----";
+    $(".tables_names")[0].add(opt);
+
+    $(".loading").css("display","none");
+
+    // 点击获取数据表列表
+    var table_list = [];
+    $("#tables_names").click(function(){
+      if(table_list.length == 0){
+        $.ajax({  
+          type: "POST",  
+          url: "/get_tables?section={{section}}",
+          success : function(res) {
+              if(res.code == 200) {
+                console.log("获取数据表列表成功");
+                options = res.data;
+                table_list =  res.data;
+                $(".tables_names").html("");
+                for (var i = 0; i < options.length; i++){
+                  const opt = document.createElement('option');
+                  opt.value = options[i].table_id;
+                  opt.text = options[i].table_name;
+                  $(".tables_names")[0].add(opt);
+                }
+                // 数据表列表获取成功后，自动获取第一个数据表中的字段列表
+                $.ajax({  
+                  type: "POST",  
+                  url: "/get_fields?section={{section}}",
+                  data: {
+                      "table_id": $(".tables_names")[0].value
+                  },
+                  success : function(res) {
+                      if(res.code == 200) {
+                        console.log("获取字段成功");
+                        options = res.data;
+                        $("#fields_names").html("");
+                        for (var i = 0; i < options.length; i++){
+                          const opt = document.createElement('option');
+                          opt.value = options[i].field_name;
+                          opt.text = options[i].field_name;
+                          $(".fields_names")[0].add(opt);
+                        }
+                      } else {
+                        console.log("获取字段失败");
+                      }
+                  },
+                  error : function(res){
+                    console.log('访问错误，请稍后重试。');
+                  }
+                });  
+              } else {
+                console.log("获取数据表列表失败");
+              }
+          },
+          error : function(res){
+            console.log('访问错误，请稍后重试。');
+          }
+        }); 
+      }
+    });
+    
+    // 数据表改变时生成对应表的字段列表
+    $("#tables_names").change(function(){
+      $.ajax({  
+        type: "POST",  
+        url: "/get_fields?section={{section}}",
+        data: {
+            "table_id": $(".tables_names")[0].value
+        },
+        success : function(res) {
+            if(res.code == 200) {
+              console.log("获取字段成功");
+              options = res.data;
+              $("#fields_names").html("");
+              for (var i = 0; i < options.length; i++){
+                const opt = document.createElement('option');
+                opt.value = options[i].field_name;
+                opt.text = options[i].field_name;
+                $(".fields_names")[0].add(opt);
+              }
+            } else {
+              console.log("获取字段失败");
+            }
+        },
+        error : function(res){
+          console.log('访问错误，请稍后重试。');
+        }
+      });  
+		});
+
+    // 点击进行分列操作
+		$("#ok").click(function(){
+      $.ajax({  
+        type: "POST",  
+        url: "/update_data?section={{section}}",
+        data: {
+            "table_id": $(".tables_names")[0].value,
+            "field_name": $(".fields_names")[0].value,
+            "separator": $(".text_separator")[0].value
+        },
+        success : function(res) {
+            if(res.code == 200) {
+              console.log("数据分列完成");
+              $(".loading-text").html("数据分列完成");
+              $(".loading").css("display","block");
+            } else {
+              console.log("数据分列失败");
+            }
+        },
+        error : function(res){
+          console.log('访问错误，请稍后重试。');
+        }
+      });  
+		});
+	});
+</script>
+<body>
+  <div id=showinfo>
+    <div>
+      <div class="setup"><a href="/setup" class="setup_url" style="color: #FFF;">设置</a></div>
+      <span>选择数据表与字段：</span>
+      <div class="init_names">
+        <select name="tables_names" class="tables_names" id="tables_names">
+        </select>
+        <select name="fields_names" class="fields_names" id="fields_names">
+        </select>
+      </div>
+      <span>分隔符：（用|分隔不同的分隔符）</span>
+      <input type="text" id="separator" value="#| |\\|/|\,|\|" class="text_separator" >
+    </div>
+    <div class="btn_div">
+    	<input type="button" id="ok" value="确定" class="btn_ok" >
+    </div>
+    <div class=loading>
+      <div class=loading-text>正在加载数据，请稍等...</div>
+    </div>
+  </div>
+  <script>
+    var url = location.href;
+    var setup_url = "/setup?base_token={{base_token}}&" + (url.split("?"))[1];
+    $(".setup_url").prop("href", setup_url);
+  </script>
+</body>
+</html>

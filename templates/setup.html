@@ -1,0 +1,117 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+	<meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width," initial-scale="1">
+	<title>多维表格参数设置</title>
+	<style>
+    div {
+      width: 100%;
+    }    
+    .text_app_token, .text_base_token {
+      width: 320px;
+      height: 30px;
+      display: block;
+      margin-left: auto;
+      margin-right: auto;
+      margin-bottom: 8px;
+      border: 1px solid #d9d9d9;
+      transition: all 0.2s cubic-bezier(0.645, 0.045, 0.355, 1);
+      border-radius: 6px
+    }
+    span {
+      width: 260px;
+      height: 25px;
+      display: block;
+      margin-left: auto;
+      margin-right: auto;
+      text-align: center;
+      font-size: 14px;
+    }
+    .btn_submit {
+      display: flex;
+      align-items: center;
+      width: 320px;
+      margin-left: auto;
+      margin-right: auto;
+    }
+    .btn_setup {
+      width: 100px;
+      height: 32px;
+      display: flex;
+      display: block;
+      margin-left: auto;
+      margin-right: auto;
+      margin-bottom: 8px;
+      margin-top: 10px;
+      color: #fff;
+      background-color: #1677ff;
+      box-shadow: 0 2px 0 rgba(5, 145, 255, 0.1);
+      font-size: 14px;
+      padding: 4px 15px;
+      border-radius: 6px;
+      border: 1px solid transparent;
+    }
+	</style>
+	<script src="https://cdn.bootcss.com/jquery/3.4.1/jquery.min.js"></script>
+</head>
+<script>
+  function getQueryString(name) {
+    var reg = new RegExp('(^|&)' + name + '=([^&]*)(&|$)', 'i');
+    var r = window.location.search.substr(1).match(reg);
+    if (r != null) {
+      return unescape(r[2]);
+    }
+    return null;
+  }
+  
+	$(function(){
+    $("#setup").click(function(){
+      if($(".text_app_token")[0].value==''){alert("请输入多维表格AppToken");return false;}
+      else if($(".text_base_token")[0].value==''){alert("请输入多维表格授权码");return false;}
+      else {
+        $.ajax({  
+          type: "POST",  
+          url: "/setup",
+          data: {
+              "baseid": "{{baseid}}",
+              "userid": "{{userid}}",
+              "app_token": $(".text_app_token")[0].value,
+              "personal_base_token": $(".text_base_token")[0].value
+          },
+          success : function(res) {
+              if(res.code == 200) {
+                console.log("配置保存成功");
+                location.href = "/?userid={{userid}}&baseid={{baseid}}";
+              } else {
+                console.log("配置保存失败");
+                alert("访问错误，请刷新后重试。");
+              }
+          },
+          error : function(res){
+            console.log('访问错误，请稍后重试。');
+            alert("访问错误，请刷新后重试。");
+          }
+        }); 
+      }
+		});
+	});
+</script>
+<body>
+  <div id=main>
+    <div>
+      <span>多维表格AppToken</span>
+      <input type="text" id="app_token" class="text_app_token" value="{{baseid}}">
+      <span>多维表格授权码</span>
+      <input type="text" id="personal_base_token" class="text_base_token" value="">
+    </div>
+    <div class="btn_submit">
+      <input type="button" id="setup" value="保存" class="btn_setup" >
+    </div>
+  </div>
+  <script>
+    var base_token = getQueryString("base_token");
+    $(".text_base_token")[0].value = base_token;
+  </script>
+</body>
+</html>
